@@ -10,6 +10,7 @@ import {
 } from "../../validators";
 import { Event } from "../../models/Event";
 import { eventAttendeesRouter } from "./attendee";
+import { calculateStartEndDate } from "../../utils/event";
 
 const eventsRouter = express.Router();
 
@@ -41,19 +42,9 @@ eventsRouter.use(eventAttendeesRouter);
 export { eventsRouter };
 
 async function createEvent(req: express.Request, res: express.Response) {
-  const schedules = req.body.schedules.sort(function (
-    a: { end: Date },
-    b: { end: Date }
-  ) {
-    return a.end.getTime() - b.end.getTime();
-  });
-
   const event = await Event.create({
     ...req.body,
-    schedules,
-    startDate: schedules[0].start,
-    endDate: schedules[0].end,
-    finishDate: schedules[schedules.length - 1].end,
+    ...calculateStartEndDate(req.body.schedules),
     creator: res.locals.auth.user,
   });
   res.json(event);

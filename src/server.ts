@@ -2,6 +2,7 @@ require("dotenv").config();
 import express from "express";
 import { apiRouter } from "./api";
 import { PORT } from "./constants";
+import { initCronJob } from "./libs/job";
 import { errorMiddleware } from "./middlewares/error";
 import { sequelize } from "./sequelize";
 
@@ -20,12 +21,16 @@ app.use(
 app.use("/v1", apiRouter);
 app.use(errorMiddleware);
 
-export async function start() {
-  await sequelize.sync({ force: true });
-
+function initApp() {
   app.listen(PORT, () => {
     console.log(`Event Service listening on port ${PORT}`);
   });
+}
+
+export async function start() {
+  await sequelize.sync({ force: false });
+  initCronJob();
+  initApp();
 }
 
 start();
