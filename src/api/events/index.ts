@@ -2,12 +2,12 @@ import express from "express";
 import { asyncMiddleware } from "../../middlewares/async";
 import { authenticate } from "../../middlewares/auth";
 import {
-    doesEventExist,
+  eventGetValidator,
   eventsCreateValidator,
   eventsDeleteValidator,
   eventsListValidator,
   eventsUpdateValidator,
-} from "../../middlewares/events";
+} from "../../validators";
 import { Event } from "../../models/Event";
 import { eventAttendeesRouter } from "./attendee";
 
@@ -35,7 +35,7 @@ eventsRouter.delete(
 );
 
 eventsRouter.get("/", eventsListValidator, listEvents);
-eventsRouter.get("/:id", doesEventExist, getEvent);
+eventsRouter.get("/:id", eventGetValidator, getEvent);
 eventsRouter.use(eventAttendeesRouter);
 
 export { eventsRouter };
@@ -61,7 +61,12 @@ async function deleteEvent(_: express.Request, res: express.Response) {
 }
 
 async function listEvents(req: express.Request, res: express.Response) {
-  res.json(await Event.listForApi(req.query as any));
+  res.json(
+    await Event.listForApi({
+      ...req.query,
+      approved: true,
+    } as any)
+  );
 }
 
 async function getEvent(_: express.Request, res: express.Response) {

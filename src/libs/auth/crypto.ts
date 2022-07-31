@@ -1,5 +1,7 @@
 import { AuthChain, Authenticator } from "beland-crypto";
 import { Request } from "express";
+import UnauthorizedExeption from "../../exceptions/UnauthorizedExeption";
+import HttpException from "../../exceptions/HttpException";
 
 function extractAuthorizationHeader(req: Request): string {
   if (req.headers && req.headers.authorization) {
@@ -14,8 +16,8 @@ function extractAuthorizationHeader(req: Request): string {
       }
     }
   }
-
-  throw new Error(
+  throw new HttpException(
+    400,
     'Bad Authorization header format. Format is "Authorization: Bearer <token>"'
   );
 }
@@ -24,11 +26,11 @@ function extractAuthChain(req: Request): AuthChain {
   const credentials = extractAuthorizationHeader(req);
   const authChain = JSON.parse(Buffer.from(credentials, "base64").toString());
   if (authChain.length === 0) {
-    throw Error("Invalid auth chain");
+    throw new HttpException(400, "Invalid auth chain");
   }
   const user = authChain[0].payload;
   if (!user) {
-    throw Error("Missing ETH address in auth chain");
+    throw new HttpException(400, "Missing ETH address in auth chain");
   }
   return authChain;
 }
@@ -43,11 +45,11 @@ export async function verify(req: Request) {
     Date.now()
   );
 
-  if (!res.ok) {
+  if (res.ok) {
     return {
       user: authChain[0]?.payload,
     };
   }
 
-  throw new Error(res.message);
+  throw new UnauthorizedExeption();
 }

@@ -6,7 +6,7 @@ import {
   DataType,
   AllowNull,
 } from "sequelize-typescript";
-import { FindOptions, WhereOptions } from "sequelize/types";
+import { FindOptions, Op, WhereOptions } from "sequelize";
 import { getSort } from "../utils/model";
 import { Event } from "./Event";
 
@@ -14,7 +14,7 @@ import { Event } from "./Event";
 export class Attendee extends Model {
   @AllowNull(false)
   @ForeignKey(() => Event)
-  @Column(DataType.INTEGER)
+  @Column(DataType.UUID)
   eventId: number;
 
   @AllowNull(false)
@@ -27,21 +27,24 @@ export class Attendee extends Model {
     sort: string;
     eventId?: string;
     user?: string;
+    id?: string;
   }) {
-    const { limit, offset, sort, ...otherParams } = params;
+    const { limit, offset, sort, id, ...otherParams } = params;
     const where: WhereOptions = {};
 
     Object.assign(where, otherParams);
+
+    if (id != undefined) {
+      Object.assign(where, { id: { [Op.in]: id.split(",") } });
+    }
 
     const query: FindOptions = {
       offset: offset,
       limit: limit,
       order: getSort(sort),
+      where,
     };
 
-    return Promise.all([
-      this.unscoped().count(query),
-      this.findAll(query),
-    ]).then(([count, rows]) => ({ count, rows }));
+    return this.findAndCountAll(query);
   }
 }

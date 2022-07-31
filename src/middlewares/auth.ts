@@ -6,9 +6,13 @@ export async function authenticate(
   res: express.Response,
   next: express.NextFunction
 ) {
-  res.locals.auth = await verify(req);
-  res.locals.authenticated = true;
-  return next();
+  try {
+    res.locals.auth = await verify(req);
+    res.locals.authenticated = true;
+    return next();
+  } catch (e) {
+    return next(e);
+  }
 }
 
 export function optionalAuthenticate(

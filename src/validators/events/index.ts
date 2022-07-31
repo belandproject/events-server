@@ -1,12 +1,18 @@
 import { NextFunction, Request, Response } from "express";
 import { body, param, query } from "express-validator";
+import AttendeeNotFoundExeption from "../../exceptions/AttendeeNotFoundExeption";
+import EventNotFoundExeption from "../../exceptions/EventNotFoundExeption";
+import UnauthorizedExeption from "../../exceptions/UnauthorizedExeption";
 import { Attendee } from "../../models/Attendee";
 import { Event } from "../../models/Event";
-import { paginationValidator, setDefaultPagination } from "../pagination";
-import { setDefaultSort } from "../sort";
-import { areValidationErrors } from "../util";
+import {
+  setDefaultSort,
+  paginationValidator,
+  setDefaultPagination,
+} from "../../middlewares";
+import { areValidationErrors } from "../../middlewares/util";
 
-const commonVideosValidator = [
+const commonEventsValidator = [
   body("name").isString().notEmpty(),
   body("image").isString(),
   body("description").isString().notEmpty(),
@@ -27,8 +33,7 @@ export async function doesEventExist(
 ) {
   const event = await Event.findByPk(req.params.id);
   if (!event) {
-    res.status(404).send({ message: `Event not found` });
-    return;
+    return next(new EventNotFoundExeption(req.params.id as string));
   }
   res.locals.event = event;
   return next();
@@ -39,27 +44,26 @@ export async function doesAttendeeExist(
   res: Response,
   next: NextFunction
 ) {
-  const attendee = await Attendee.findByPk(req.params.attendeeId);
+  const attendeeId: number = req.params.attendeeId as unknown as number;
+  const attendee = await Attendee.findByPk(attendeeId);
   if (!attendee) {
-    res.status(404).send({ message: `Attendee not found` });
-    return;
+    return next(new AttendeeNotFoundExeption(attendeeId));
   }
   res.locals.attendee = attendee;
   return next();
 }
 
-export const eventsCreateValidator = [...commonVideosValidator];
+export const eventsCreateValidator = [...commonEventsValidator];
 
 export const eventsUpdateValidator = [
   param("id").isString().notEmpty(),
-  ...commonVideosValidator,
+  ...commonEventsValidator,
   doesEventExist,
 
   async (_: Request, res: Response, next: NextFunction) => {
     const event: Event = res.locals.event;
     if (event.creator != res.locals.auth.user) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
+      return next(new UnauthorizedExeption());
     }
     return next();
   },
@@ -72,8 +76,7 @@ export const eventsDeleteValidator = [
   async (_: Request, res: Response, next: NextFunction) => {
     const event: Event = res.locals.event;
     if (event.creator != res.locals.auth.user) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
+      return next(new UnauthorizedExeption());
     }
     return next();
   },
@@ -91,8 +94,7 @@ export const eventAttendeeDeleteValidator = [
   async (_: Request, res: Response, next: NextFunction) => {
     const attendee: Attendee = res.locals.event;
     if (attendee.user != res.locals.auth.user) {
-      res.status(401).json({ message: "Unauthorized" });
-      return;
+      return next(new UnauthorizedExeption());
     }
     return next();
   },
@@ -102,7 +104,11 @@ export const eventsListValidator = [
   ...paginationValidator,
   query("creator").isString().optional(),
   query("owner").isString().optional(),
-  query("sort").isIn(["id:asc", "id:desc"]).default("id:desc").optional(),
+  query("sort").isIn(["id", "-id"]).optional(),
+  query("id").isString().optional(),
+  query("category").isString().optional(),
+  query("trending").isBoolean().optional(),
+  query("highlighted").isBoolean().optional(),
   areValidationErrors,
   setDefaultSort,
   setDefaultPagination,
@@ -111,8 +117,15 @@ export const eventsListValidator = [
 export const eventAttendeesListValidator = [
   ...paginationValidator,
   param("id").isString().optional(),
-  query("sort").isIn(["id:asc", "id:desc"]).default("id:desc").optional(),
+  query("id").isString().optional(),
+  query("sort").isIn(["id", "-id"]).optional(),
   areValidationErrors,
   setDefaultSort,
   setDefaultPagination,
 ];
+
+export const eventGetValidator = [
+  param("id").isUUID().notEmpty(),
+  areValidationErrors,
+  doesEventExist
+]

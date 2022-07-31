@@ -1,5 +1,4 @@
 export * from './auth'
 export * from './async'
-export * from './events'
 export * from './pagination'
 export * from './sort'

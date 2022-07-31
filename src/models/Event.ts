@@ -8,6 +8,7 @@ import {
   Min,
   Default,
   AllowNull,
+  PrimaryKey,
 } from "sequelize-typescript";
 import { FindOptions, Op, Sequelize, WhereOptions } from "sequelize";
 import { getSort } from "../utils/model";
@@ -15,6 +16,12 @@ import { Attendee } from "./Attendee";
 
 @Table({ tableName: "events" })
 export class Event extends Model {
+  @AllowNull(false)
+  @PrimaryKey
+  @Default(DataType.UUIDV4)
+  @Column(DataType.UUID)
+  id: string
+
   @AllowNull(false)
   @Column(DataType.STRING)
   creator: string;
@@ -99,10 +106,12 @@ export class Event extends Model {
     trending?: boolean;
     highlighted?: boolean;
     approved?: boolean;
-    requestUser?: string;
     search?: string;
+    id?: string;
+    category?: string;
   }) {
-    const { limit, offset, sort, search, ...otherParams } = params;
+    const { limit, offset, sort, search, id, category, ...otherParams } =
+      params;
     const where: WhereOptions = {};
 
     Object.assign(where, otherParams);
@@ -110,8 +119,18 @@ export class Event extends Model {
     if (search != undefined) {
       Object.assign(where, {
         name: {
-          [Op.match]: Sequelize.fn('to_tsquery', search)
-        }
+          [Op.match]: Sequelize.fn("to_tsquery", search),
+        },
+      });
+    }
+
+    if (id != undefined) {
+      Object.assign(where, { id: { [Op.in]: id.split(",") } });
+    }
+
+    if (category != undefined) {
+      Object.assign(where, {
+        categories: { [Op.contains]: category.split(",") },
       });
     }
 
@@ -119,13 +138,9 @@ export class Event extends Model {
       offset: offset,
       limit: limit,
       order: getSort(sort),
-      where
+      where,
     };
 
-
-    return Promise.all([
-      this.unscoped().count(query),
-      this.findAll(query),
-    ]).then(([count, rows]) => ({ count, rows }));
+    return this.findAndCountAll(query);
   }
 }

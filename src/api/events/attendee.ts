@@ -1,12 +1,13 @@
 import express, { Request, Response } from "express";
+import { sequelize } from "../../sequelize";
 import {
-  asyncMiddleware,
-  authenticate,
   eventAttendeeAddValidator,
   eventAttendeeDeleteValidator,
   eventAttendeesListValidator,
-} from "../../middlewares";
+} from "../../validators";
 import { Attendee } from "../../models/Attendee";
+import { Event } from "../../models/Event";
+import { authenticate, asyncMiddleware } from "../../middlewares";
 
 const eventAttendeesRouter = express.Router();
 eventAttendeesRouter.get(
@@ -14,11 +15,10 @@ eventAttendeesRouter.get(
   eventAttendeesListValidator,
   listEventAttendees
 );
-eventAttendeesRouter.post("/:id/attendees", authenticate, addAttendee);
-eventAttendeesRouter.delete(
-  "/:id/attendees/:attendeeId",
+eventAttendeesRouter.post(
+  "/:id/attendees",
   authenticate,
-  asyncMiddleware(eventAttendeeAddValidator),
+  eventAttendeeAddValidator,
   addAttendee
 );
 eventAttendeesRouter.delete(
@@ -40,15 +40,34 @@ export async function listEventAttendees(req: Request, res: Response) {
 }
 
 export async function addAttendee(req: Request, res: Response) {
-  await Attendee.create({
-    eventId: req.params.id,
-    user: res.locals.auth.user,
+  await sequelize.transaction(async (transaction) => {
+    await Promise.all([
+      Event.update(
+        { field: sequelize.literal("attendeesCount + 1") },
+        { where: { id: req.params.id }, transaction }
+      ),
+      Attendee.create(
+        {
+          eventId: req.params.id,
+          user: res.locals.auth.user,
+        },
+        { transaction }
+      ),
+    ]);
   });
 
   res.json({});
 }
 
 export async function deleteAttendee(_: Request, res: Response) {
-  await res.locals.attendee.destroy();
-  res.json(res.locals.attendee);
+  const attendee: Attendee = res.locals.attendee;
+  await sequelize.transaction(async (transaction) => {
+    Event.update(
+      { field: sequelize.literal("attendeesCount - 1") },
+      { where: { id: attendee.eventId }, transaction }
+    ),
+      await Promise.all([attendee.destroy({ transaction })]);
+  });
+
+  res.json(attendee);
 }
