@@ -5,6 +5,7 @@ import {
   ForeignKey,
   DataType,
   AllowNull,
+  Index,
 } from "sequelize-typescript";
 import { FindOptions, Op, WhereOptions } from "sequelize";
 import { getSort } from "../utils/model";
@@ -17,6 +18,7 @@ export class Attendee extends Model {
   @Column(DataType.UUID)
   eventId: number;
 
+  @Index
   @AllowNull(false)
   @Column(DataType.STRING(255))
   user: string;

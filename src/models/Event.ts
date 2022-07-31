@@ -9,6 +9,7 @@ import {
   Default,
   AllowNull,
   PrimaryKey,
+  Index,
 } from "sequelize-typescript";
 import { FindOptions, Op, Sequelize, WhereOptions } from "sequelize";
 import { getSort } from "../utils/model";
@@ -20,8 +21,9 @@ export class Event extends Model {
   @PrimaryKey
   @Default(DataType.UUIDV4)
   @Column(DataType.UUID)
-  id: string
+  id: string;
 
+  @Index
   @AllowNull(false)
   @Column(DataType.STRING)
   creator: string;
@@ -47,17 +49,34 @@ export class Event extends Model {
   @Column(DataType.JSONB)
   schedules: JSON;
 
+  @Index
+  @AllowNull(false)
+  @Column(DataType.DATE)
+  startDate: Date;
+
+  @Index
+  @AllowNull(false)
+  @Column(DataType.DATE)
+  endDate: Date;
+
+  @Index
+  @AllowNull(false)
+  @Column(DataType.DATE)
+  finishDate: Date;
+
   @Column(DataType.STRING(255))
   contact: string;
 
   @Column(DataType.TEXT)
   details: string;
 
+  @Index
   @AllowNull(false)
   @Default(false)
   @Column(DataType.BOOLEAN)
   approved: boolean;
 
+  @Index
   @AllowNull(false)
   @Default(false)
   @Column(DataType.BOOLEAN)
@@ -77,24 +96,29 @@ export class Event extends Model {
   @Column(DataType.ARRAY(DataType.STRING(255)))
   categories: Array<string>;
 
+  @Index
   @AllowNull(false)
   @Max(150)
   @Min(-150)
   @Column(DataType.INTEGER)
   x: number;
 
+  @Index
   @AllowNull(false)
   @Max(150)
   @Min(-150)
   @Column(DataType.INTEGER)
   y: number;
 
+  @Index
   @Column(DataType.INTEGER)
   estateId: number;
 
+  @Index
   @Column(DataType.BOOLEAN)
   trending: boolean;
 
+  @Index
   @Column(DataType.BOOLEAN)
   highlighted: boolean;
 
@@ -109,9 +133,18 @@ export class Event extends Model {
     search?: string;
     id?: string;
     category?: string;
+    isActive?: boolean;
   }) {
-    const { limit, offset, sort, search, id, category, ...otherParams } =
-      params;
+    const {
+      limit,
+      offset,
+      sort,
+      search,
+      id,
+      category,
+      isActive,
+      ...otherParams
+    } = params;
     const where: WhereOptions = {};
 
     Object.assign(where, otherParams);
@@ -131,6 +164,12 @@ export class Event extends Model {
     if (category != undefined) {
       Object.assign(where, {
         categories: { [Op.contains]: category.split(",") },
+      });
+    }
+
+    if (isActive != undefined) {
+      Object.assign(where, {
+        endDate: { [Op.gt]: new Date() },
       });
     }
 

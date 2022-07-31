@@ -6,6 +6,7 @@ import {
   DataType,
   AllowNull,
   Default,
+  Index,
 } from "sequelize-typescript";
 import { FindOptions, Op, WhereOptions } from "sequelize";
 import { getSort } from "../utils/model";
@@ -20,6 +21,7 @@ export class Category extends Model {
   @Column(DataType.STRING(255))
   name: string;
 
+  @Index
   @AllowNull(false)
   @Default(false)
   @Column(DataType.BOOLEAN)
