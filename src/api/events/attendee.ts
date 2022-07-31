@@ -62,11 +62,13 @@ export async function addAttendee(req: Request, res: Response) {
 export async function deleteAttendee(_: Request, res: Response) {
   const attendee: Attendee = res.locals.attendee;
   await sequelize.transaction(async (transaction) => {
-    Event.update(
-      { field: sequelize.literal("attendeesCount - 1") },
-      { where: { id: attendee.eventId }, transaction }
-    ),
-      await Promise.all([attendee.destroy({ transaction })]);
+    await Promise.all([
+      Event.update(
+        { field: sequelize.literal("attendeesCount - 1") },
+        { where: { id: attendee.eventId }, transaction }
+      ),
+      attendee.destroy({ transaction }),
+    ]);
   });
 
   res.json(attendee);
