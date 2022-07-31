@@ -117,7 +117,7 @@ export const eventsListValidator = [
 export const eventAttendeesListValidator = [
   ...paginationValidator,
   param("id").isString().optional(),
-  query("id").isString().optional(),
+  query("user").isString().optional(),
   query("sort").isIn(["id", "-id"]).optional(),
   areValidationErrors,
   setDefaultSort,
