@@ -4,7 +4,7 @@ import AttendeeNotFoundExeption from "../../exceptions/AttendeeNotFoundExeption"
 import EventNotFoundExeption from "../../exceptions/EventNotFoundExeption";
 import UnauthorizedExeption from "../../exceptions/UnauthorizedExeption";
 import { Attendee } from "../../models/Attendee";
-import { Event } from "../../models/Event";
+import { Event, EventStatus } from "../../models/Event";
 import {
   setDefaultSort,
   paginationValidator,
@@ -16,12 +16,12 @@ const commonEventsValidator = [
   body("name").isString().notEmpty(),
   body("image").isString(),
   body("description").isString().notEmpty(),
-  body("schedules").isArray({min: 1, max: 30}),
+  body("schedules").isArray({ min: 1, max: 30 }),
   body("schedules.*.start").isDate(),
   body("schedules.*.end").isDate(),
   body("contact").isString(),
   body("details").isString(),
-  body("categories").isArray({min: 1, max: 3}),
+  body("categories").isArray({ min: 1, max: 3 }),
   body("categories.*").isString(),
   body("x").isInt({ min: -150, max: 150 }),
   body("y").isInt({ min: -150, max: 150 }),
@@ -61,27 +61,29 @@ export const eventsUpdateValidator = [
   param("id").isString().notEmpty(),
   ...commonEventsValidator,
   doesEventExist,
-
-  async (_: Request, res: Response, next: NextFunction) => {
-    const event: Event = res.locals.event;
-    if (event.creator != res.locals.auth.user) {
-      return next(new UnauthorizedExeption());
-    }
-    return next();
-  },
+  canUpdateOrEditEvent,
 ];
+
+export const adminEventsUpdateValidator = [
+  body("status").isIn(Object.keys(EventStatus)).optional(),
+  body("trending").isBoolean().optional(),
+  body("highlighted").isBoolean().optional(),
+  ...eventsUpdateValidator
+];
+
+async function canUpdateOrEditEvent(_: Request, res: Response, next: NextFunction) {
+  const event: Event = res.locals.event;
+  if (![event.creator, process.env.ADMIN].includes(res.locals.auth.user)) {
+    return next(new UnauthorizedExeption());
+  }
+  return next();
+}
 
 export const eventsDeleteValidator = [
   param("id").isString().notEmpty(),
   doesEventExist,
   areValidationErrors,
-  async (_: Request, res: Response, next: NextFunction) => {
-    const event: Event = res.locals.event;
-    if (event.creator != res.locals.auth.user) {
-      return next(new UnauthorizedExeption());
-    }
-    return next();
-  },
+  canUpdateOrEditEvent,
 ];
 
 export const eventAttendeeAddValidator = [
@@ -103,7 +105,6 @@ export const eventAttendeeDeleteValidator = [
 ];
 
 export const eventsListValidator = [
-  ...paginationValidator,
   query("creator").isString().optional(),
   query("owner").isString().optional(),
   query("sort").isIn(["id", "-id"]).optional(),
@@ -111,17 +112,24 @@ export const eventsListValidator = [
   query("category").isString().optional(),
   query("trending").isBoolean().optional(),
   query("highlighted").isBoolean().optional(),
-  areValidationErrors,
+  ...paginationValidator,
   setDefaultSort,
   setDefaultPagination,
 ];
 
+export const adminEventsListValidator = [
+  query("status").isIn(Object.values(EventStatus)).optional(),
+  query("isActive").isBoolean().optional(),
+  ...eventsListValidator,
+];
+
+export const myEventsListValidator = [...adminEventsListValidator];
+
 export const eventAttendeesListValidator = [
-  ...paginationValidator,
   param("id").isString().optional(),
   query("user").isString().optional(),
   query("sort").isIn(["id", "-id"]).optional(),
-  areValidationErrors,
+  ...paginationValidator,
   setDefaultSort,
   setDefaultPagination,
 ];
@@ -129,5 +137,5 @@ export const eventAttendeesListValidator = [
 export const eventGetValidator = [
   param("id").isUUID().notEmpty(),
   areValidationErrors,
-  doesEventExist
-]
+  doesEventExist,
+];

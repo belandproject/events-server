@@ -8,7 +8,7 @@ import {
   eventsListValidator,
   eventsUpdateValidator,
 } from "../../validators";
-import { Event } from "../../models/Event";
+import { Event, EventListParams, EventStatus } from "../../models/Event";
 import { eventAttendeesRouter } from "./attendee";
 import { calculateStartEndDate } from "../../utils/event";
 
@@ -52,7 +52,10 @@ async function createEvent(req: express.Request, res: express.Response) {
 
 async function updateEvent(req: express.Request, res: express.Response) {
   const event: Event = res.locals.event;
-  await event.update(req.body);
+  await event.update({
+    ...req.body,
+    ...calculateStartEndDate(req.body.schedules),
+  });
   res.json(event);
 }
 
@@ -66,10 +69,9 @@ async function listEvents(req: express.Request, res: express.Response) {
   res.json(
     await Event.listForApi({
       ...req.query,
-      approved: true,
       isActive: true,
-      rejected: false,
-    } as any)
+      status: EventStatus.APPROVED,
+    } as EventListParams)
   );
 }
 

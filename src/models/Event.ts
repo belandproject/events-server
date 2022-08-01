@@ -15,6 +15,26 @@ import { FindOptions, Op, Sequelize, WhereOptions } from "sequelize";
 import { getSort } from "../utils/model";
 import { Attendee } from "./Attendee";
 
+export enum EventStatus {
+  PENDING = "PENDING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
+}
+
+export type EventListParams = {
+  limit: number;
+  offset: number;
+  sort: string;
+  creator?: string;
+  trending?: boolean;
+  highlighted?: boolean;
+  status?: EventStatus;
+  search?: string;
+  id?: string;
+  category?: string;
+  isActive?: boolean;
+};
+
 @Table({ tableName: "events" })
 export class Event extends Model {
   @AllowNull(false)
@@ -72,15 +92,9 @@ export class Event extends Model {
 
   @Index
   @AllowNull(false)
-  @Default(false)
-  @Column(DataType.BOOLEAN)
-  approved: boolean;
-
-  @Index
-  @AllowNull(false)
-  @Default(false)
-  @Column(DataType.BOOLEAN)
-  rejected: boolean;
+  @Default(EventStatus.PENDING)
+  @Column(DataType.ENUM({ values: Object.keys(EventStatus) }))
+  status: EventStatus;
 
   @Column(DataType.TEXT)
   reason: string;
@@ -126,19 +140,7 @@ export class Event extends Model {
   @Column(DataType.BOOLEAN)
   highlighted: boolean;
 
-  static listForApi(params: {
-    limit: number;
-    offset: number;
-    sort: string;
-    creator?: string;
-    trending?: boolean;
-    highlighted?: boolean;
-    approved?: boolean;
-    search?: string;
-    id?: string;
-    category?: string;
-    isActive?: boolean;
-  }) {
+  static listForApi(params: EventListParams) {
     const {
       limit,
       offset,

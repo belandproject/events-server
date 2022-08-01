@@ -1,4 +1,5 @@
 import express from "express";
+import UnauthorizedExeption from "../exceptions/UnauthorizedExeption";
 import { verify } from "../libs/auth/crypto";
 
 export async function authenticate(
@@ -24,5 +25,16 @@ export function optionalAuthenticate(
 
   res.locals.authenticated = false;
 
+  return next();
+}
+
+export function onlyAdmin(
+  _: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) {
+  if (res.locals.auth.user === process.env.ADMIN) {
+    return next(new UnauthorizedExeption());
+  }
   return next();
 }

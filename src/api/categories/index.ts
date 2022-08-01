@@ -1,5 +1,5 @@
 import express from "express";
-import { categoriesListValidator } from "src/validators";
+import { categoriesListValidator } from "../../validators";
 import { asyncMiddleware } from "../../middlewares";
 import { Category } from "../../models/Category";
 
