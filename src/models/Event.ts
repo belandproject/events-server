@@ -114,11 +114,15 @@ export class Event extends Model {
   @Column(DataType.INTEGER)
   estateId: number;
 
+  @AllowNull(false)
   @Index
+  @Default(false)
   @Column(DataType.BOOLEAN)
   trending: boolean;
 
+  @AllowNull(false)
   @Index
+  @Default(false)
   @Column(DataType.BOOLEAN)
   highlighted: boolean;
 

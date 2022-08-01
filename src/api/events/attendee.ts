@@ -13,19 +13,19 @@ const eventAttendeesRouter = express.Router();
 eventAttendeesRouter.get(
   "/:id/attendees",
   eventAttendeesListValidator,
-  listEventAttendees
+  asyncMiddleware(listEventAttendees)
 );
 eventAttendeesRouter.post(
   "/:id/attendees",
   authenticate,
-  eventAttendeeAddValidator,
-  addAttendee
+  asyncMiddleware(eventAttendeeAddValidator),
+  asyncMiddleware(addAttendee)
 );
 eventAttendeesRouter.delete(
   "/:id/attendees/:attendeeId",
   authenticate,
   asyncMiddleware(eventAttendeeDeleteValidator),
-  deleteAttendee
+  asyncMiddleware(deleteAttendee)
 );
 
 export { eventAttendeesRouter };

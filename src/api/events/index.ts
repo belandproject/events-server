@@ -17,26 +17,26 @@ const eventsRouter = express.Router();
 eventsRouter.post(
   "/",
   authenticate,
-  asyncMiddleware(eventsCreateValidator),
-  createEvent
+  eventsCreateValidator,
+  asyncMiddleware(createEvent)
 );
 
 eventsRouter.put(
   "/:id",
   authenticate,
   asyncMiddleware(eventsUpdateValidator),
-  updateEvent
+  asyncMiddleware(updateEvent)
 );
 
 eventsRouter.delete(
   "/:id",
   authenticate,
   asyncMiddleware(eventsDeleteValidator),
-  deleteEvent
+  asyncMiddleware(deleteEvent)
 );
 
-eventsRouter.get("/", eventsListValidator, listEvents);
-eventsRouter.get("/:id", eventGetValidator, getEvent);
+eventsRouter.get("/", eventsListValidator, asyncMiddleware(listEvents));
+eventsRouter.get("/:id", asyncMiddleware(eventGetValidator), getEvent);
 eventsRouter.use(eventAttendeesRouter);
 
 export { eventsRouter };
@@ -73,6 +73,6 @@ async function listEvents(req: express.Request, res: express.Response) {
   );
 }
 
-async function getEvent(_: express.Request, res: express.Response) {
+function getEvent(_: express.Request, res: express.Response) {
   res.json(res.locals.event);
 }

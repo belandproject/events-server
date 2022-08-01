@@ -1,8 +1,14 @@
 import express from "express";
+import { categoriesListValidator } from "src/validators";
+import { asyncMiddleware } from "../../middlewares";
 import { Category } from "../../models/Category";
 
 const categoriesRouter = express.Router();
-categoriesRouter.get("/", listCategories);
+categoriesRouter.get(
+  "/",
+  categoriesListValidator,
+  asyncMiddleware(listCategories)
+);
 
 export { categoriesRouter };
 
