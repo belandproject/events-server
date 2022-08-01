@@ -33,7 +33,7 @@ export function onlyAdmin(
   res: express.Response,
   next: express.NextFunction
 ) {
-  if (res.locals.auth.user === process.env.ADMIN) {
+  if (res.locals.auth.user != process.env.ADMIN) {
     return next(new UnauthorizedExeption());
   }
   return next();
