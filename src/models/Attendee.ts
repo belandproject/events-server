@@ -5,7 +5,7 @@ import {
   ForeignKey,
   DataType,
   AllowNull,
-  Index,
+  Unique,
 } from "sequelize-typescript";
 import { FindOptions, Op, WhereOptions } from "sequelize";
 import { getSort } from "../utils/model";
@@ -13,12 +13,14 @@ import { Event } from "./Event";
 
 @Table({ tableName: "attendees" })
 export class Attendee extends Model {
+
+  @Unique({name: "unique_attendee_event_user", msg: ""})
   @AllowNull(false)
   @ForeignKey(() => Event)
   @Column(DataType.UUID)
   eventId: number;
 
-  @Index
+  @Unique({name: "unique_attendee_event_user", msg: ""})
   @AllowNull(false)
   @Column(DataType.STRING(255))
   user: string;

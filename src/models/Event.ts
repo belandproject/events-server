@@ -15,6 +15,14 @@ import { FindOptions, Op, Sequelize, WhereOptions } from "sequelize";
 import { getSort } from "../utils/model";
 import { Attendee } from "./Attendee";
 
+
+export interface Schedule {
+  start: Date,
+  end: Date,
+  content?: string
+}
+
+
 export enum EventStatus {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
@@ -86,7 +94,7 @@ export class Event extends Model {
 
   @Column(DataType.STRING(255))
   contact: string;
-
+  
   @Column(DataType.TEXT)
   details: string;
 

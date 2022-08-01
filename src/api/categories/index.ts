@@ -34,7 +34,7 @@ categoriesRouter.delete(
 export { categoriesRouter };
 
 async function listCategories(req: express.Request, res: express.Response) {
-  res.json(await Category.listForApi(req.query as any));
+  res.json(await Category.listForApi({ ...req.query, isActive: true } as any));
 }
 
 async function createCategory(req: express.Request, res: express.Response) {

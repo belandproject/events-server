@@ -28,7 +28,7 @@ function initApp() {
 }
 
 export async function start() {
-  await sequelize.sync({ force: true });
+  await sequelize.sync({ force: false });
   initCronJob();
   initApp();
 }
